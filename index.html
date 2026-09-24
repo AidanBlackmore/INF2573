@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loot Drop Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0b10;
+      --bg-glow: #2a1622;
+      --panel: #16121b;
+      --panel-edge: #3a2f3f;
+      --text: #e8dcc4;
+      --muted: #9a8c7a;
+      --gold: #c9a24a;
+      --blood: #8b1e1e;
+      --blood-hi: #b52a2a;
+
+      --common: #9d9d9d;
+      --uncommon: #1eff00;
+      --rare: #0070dd;
+      --epic: #a335ee;
+      --legendary: #ff8000;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% 0%, var(--bg-glow) 0%, transparent 60%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Crimson Text", Georgia, serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 48px;
+    }
+
+    h1 {
+      font-family: "Cinzel", Georgia, serif;
+      font-weight: 800;
+      font-size: clamp(1.6rem, 6vw, 2.6rem);
+      letter-spacing: 0.06em;
+      color: var(--gold);
+      text-shadow: 0 2px 0 #000, 0 0 18px rgba(201, 162, 74, 0.35);
+      margin: 0 0 8px;
+      text-align: center;
+    }
+
+    .counter {
+      font-family: "Cinzel", Georgia, serif;
+      font-size: 0.95rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-bottom: 36px;
+      text-align: center;
+    }
+
+    .counter strong {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .defeat-btn {
+      font-family: "Cinzel", Georgia, serif;
+      font-weight: 800;
+      font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #f6e7c8;
+      background: linear-gradient(180deg, var(--blood-hi) 0%, var(--blood) 55%, #4d0f0f 100%);
+      border: 2px solid var(--gold);
+      border-radius: 10px;
+      padding: 22px 44px;
+      width: min(100%, 360px);
+      cursor: pointer;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 220, 180, 0.35),
+        0 6px 0 #2a0808,
+        0 10px 30px rgba(139, 30, 30, 0.45);
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.7);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .defeat-btn:hover { filter: brightness(1.12); }
+
+    .defeat-btn:active {
+      transform: translateY(4px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 220, 180, 0.35),
+        0 2px 0 #2a0808,
+        0 6px 18px rgba(139, 30, 30, 0.45);
+    }
+
+    .defeat-btn:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 4px;
+    }
+
+    .loot {
+      width: min(100%, 360px);
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .hint {
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Item tooltip card */
+    .item {
+      --rarity: var(--common);
+      background: linear-gradient(180deg, rgba(20, 16, 28, 0.97), rgba(8, 6, 12, 0.97));
+      border: 1px solid var(--panel-edge);
+      border-radius: 6px;
+      padding: 12px 14px;
+      box-shadow:
+        inset 0 0 0 1px rgba(0, 0, 0, 0.8),
+        0 4px 14px rgba(0, 0, 0, 0.6);
+      animation: drop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    }
+
+    .item.newest { border-color: var(--rarity); }
+
+    .item-name {
+      font-family: "Cinzel", Georgia, serif;
+      font-weight: 600;
+      font-size: 1.15rem;
+      color: var(--rarity);
+      text-shadow: 0 1px 1px #000;
+      margin: 0 0 4px;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 1rem;
+    }
+
+    .item-rarity { color: var(--rarity); }
+    .item-type { color: var(--text); }
+
+    .item-flavor {
+      margin-top: 8px;
+      color: #d9b95c;
+      font-style: italic;
+      font-size: 0.95rem;
+    }
+
+    .item.common    { --rarity: var(--common); }
+    .item.uncommon  { --rarity: var(--uncommon); }
+    .item.rare      { --rarity: var(--rare); }
+    .item.epic      { --rarity: var(--epic); }
+    .item.legendary {
+      --rarity: var(--legendary);
+      border: 2px solid var(--legendary);
+      animation:
+        drop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+        glow 1.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes drop {
+      from { opacity: 0; transform: translateY(-14px) scale(0.96); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 6px 1px rgba(255, 128, 0, 0.45), inset 0 0 6px rgba(255, 128, 0, 0.2); }
+      to   { box-shadow: 0 0 22px 5px rgba(255, 128, 0, 0.8), inset 0 0 12px rgba(255, 128, 0, 0.35); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .item, .item.legendary {
+        animation: none;
+        box-shadow: 0 0 16px 4px rgba(255, 128, 0, 0.6);
+      }
+      .item:not(.legendary) { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Loot Drop Simulator</h1>
+  <div class="counter">Monsters defeated: <strong id="count">0</strong></div>
+
+  <button class="defeat-btn" id="defeat" type="button">Defeat Monster</button>
+
+  <section class="loot" id="loot" aria-live="polite">
+    <p class="hint">Slay a monster to see what it drops.</p>
+  </section>
+
+  <script>
+    const RARITIES = [
+      { key: "common",    label: "Common",    chance: 60 },
+      { key: "uncommon",  label: "Uncommon",  chance: 25 },
+      { key: "rare",      label: "Rare",      chance: 10 },
+      { key: "epic",      label: "Epic",      chance: 4 },
+      { key: "legendary", label: "Legendary", chance: 1 },
+    ];
+
+    const ADJECTIVES = [
+      "Rusty", "Gleaming", "Cursed", "Ancient", "Blessed", "Shadowed", "Runed",
+      "Bloodstained", "Frostforged", "Ember-Touched", "Hollow", "Whispering",
+      "Tarnished", "Radiant", "Vile", "Stormcaller's", "Gilded", "Bone-Carved",
+    ];
+
+    const NOUNS = {
+      weapon:  ["Dagger", "Longsword", "Warhammer", "Greataxe", "Staff", "Bow", "Scythe", "Mace", "Spear"],
+      armor:   ["Helm", "Breastplate", "Gauntlets", "Greaves", "Pauldrons", "Robe", "Cloak", "Shield", "Boots"],
+      trinket: ["Amulet", "Ring", "Talisman", "Idol", "Charm", "Orb", "Relic", "Sigil", "Phylactery"],
+    };
+
+    const FLAVOR = {
+      epic: [
+        "It hums faintly when danger is near.",
+        "Its previous owner will not be needing it.",
+        "Forged in a fire that never went out.",
+      ],
+      legendary: [
+        "Songs are still sung of the hand that last held this.",
+        "The stars themselves bent to see it made.",
+        "Kingdoms have fallen for less.",
+      ],
+    };
+
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+    function rollRarity() {
+      let roll = Math.random() * 100;
+      for (const r of RARITIES) {
+        if (roll < r.chance) return r;
+        roll -= r.chance;
+      }
+      return RARITIES[0];
+    }
+
+    function generateItem() {
+      const type = pick(Object.keys(NOUNS));
+      return {
+        name: `${pick(ADJECTIVES)} ${pick(NOUNS[type])}`,
+        type,
+        rarity: rollRarity(),
+      };
+    }
+
+    function renderItem(item) {
+      const card = document.createElement("article");
+      card.className = `item newest ${item.rarity.key}`;
+
+      const name = document.createElement("h2");
+      name.className = "item-name";
+      name.textContent = item.name;
+
+      const row = document.createElement("div");
+      row.className = "item-row";
+      const rarity = document.createElement("span");
+      rarity.className = "item-rarity";
+      rarity.textContent = item.rarity.label;
+      const type = document.createElement("span");
+      type.className = "item-type";
+      type.textContent = item.type[0].toUpperCase() + item.type.slice(1);
+      row.append(rarity, type);
+
+      card.append(name, row);
+
+      if (FLAVOR[item.rarity.key]) {
+        const flavor = document.createElement("div");
+        flavor.className = "item-flavor";
+        flavor.textContent = `"${pick(FLAVOR[item.rarity.key])}"`;
+        card.append(flavor);
+      }
+      return card;
+    }
+
+    const MAX_SHOWN = 10;
+    const lootEl = document.getElementById("loot");
+    const countEl = document.getElementById("count");
+    let defeated = 0;
+
+    document.getElementById("defeat").addEventListener("click", () => {
+      defeated++;
+      countEl.textContent = defeated;
+
+      lootEl.querySelector(".hint")?.remove();
+      lootEl.querySelector(".newest")?.classList.remove("newest");
+      lootEl.prepend(renderItem(generateItem()));
+
+      while (lootEl.children.length > MAX_SHOWN) lootEl.lastElementChild.remove();
+    });
+  </script>
+</body>
+</html>
