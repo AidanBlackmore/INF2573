@@ -206,8 +206,9 @@ function planRound(room) {
     const candidates = connected.filter((p) => spotlight(p.id) === fewest);
     plan.targetId = candidates[crypto.randomInt(candidates.length)].id;
   }
-  // Rotate who reads the scene out loud.
-  plan.readerId = connected[index % connected.length].id;
+  // Rotate who reads the scene out loud (never the person the round is about).
+  const readers = connected.filter((p) => p.id !== plan.targetId);
+  plan.readerId = readers[index % readers.length].id;
   return plan;
 }
 

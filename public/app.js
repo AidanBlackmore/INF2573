@@ -159,8 +159,17 @@ function roundHeader(r) {
 function renderAnswering() {
   const r = state.round;
   const waiting = state.players.filter((p) => p.connected && !r.answeredIds.includes(p.id));
+  let instruction = '';
+  if (r.type === 'predict') {
+    instruction = r.targetId === state.you
+      ? `<div class="card highlight">🎯 <strong>This one's about you.</strong> Pick what you'd honestly do. Everyone else is guessing your answer.</div>`
+      : `<div class="card">🔮 Predict what <strong>${esc(nameOf(r.targetId))}</strong> will pick. They're answering for real.</div>`;
+  } else if (r.type === 'vote_player') {
+    instruction = '<p class="muted small">Vote for anyone, even yourself.</p>';
+  }
   return `
     ${roundHeader(r)}
+    ${instruction}
     <div class="stack">
       ${r.options.map((o) => `<button class="${r.yourAnswer === o.id ? 'selected' : ''}" data-action="answer" data-value="${esc(o.id)}">${esc(o.text)}${r.type === 'vote_player' && o.id === state.you ? ' <span class="muted">(you)</span>' : ''}</button>`).join('')}
     </div>
@@ -192,6 +201,26 @@ function renderResult(r) {
           ${r.answers ? `<div class="names">voted by ${esc(namesOf(votersFor(t.playerId)))}</div>` : ''}
         </div>`).join('')}
       ${r.answers ? '' : `<p class="muted small center">Votes are anonymous… unless the host reveals them.</p>`}`;
+  }
+  if (r.type === 'predict') {
+    const target = nameOf(r.targetId);
+    const { actual, guesserIds, correctIds } = r.result;
+    if (!actual) return `<div class="card">${esc(target)} didn't answer in time, so nobody wins this one.</div>`;
+    const optText = (id) => (r.options.find((o) => o.id === id) || { text: '?' }).text;
+    const verdict = correctIds.length === 0 ? 'Nobody saw that coming.'
+      : correctIds.length === guesserIds.length ? `Everyone called it. ${target} is an open book.`
+        : `${correctIds.length} of ${guesserIds.length} called it.`;
+    return `
+      <div class="card highlight center">
+        <p class="tag">${esc(target)} actually chose</p>
+        <p class="prompt" style="margin:6px 0">${esc(optText(actual))}</p>
+        <p>${esc(verdict)}</p>
+      </div>
+      ${guesserIds.map((pid) => `
+        <div class="card">
+          ${correctIds.includes(pid) ? '✅' : '❌'} <strong>${esc(nameOf(pid))}</strong>
+          <span class="names">guessed "${esc(optText(r.answers[pid]))}"</span>
+        </div>`).join('')}`;
   }
   return '';
 }

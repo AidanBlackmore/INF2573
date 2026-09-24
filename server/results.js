@@ -37,6 +37,14 @@ function computeResult(round, players) {
       const winners = top > 0 ? tally.filter((t) => t.count === top).map((t) => t.playerId) : [];
       return { tally, winners };
     }
+    case 'predict': {
+      // The target answers for themselves; everyone else guesses the target's answer.
+      const targetId = round.plan.targetId;
+      const actual = answers[targetId] ?? null;
+      const guessers = Object.keys(answers).filter((pid) => pid !== targetId);
+      const correctIds = actual ? guessers.filter((pid) => answers[pid] === actual) : [];
+      return { actual, guesserIds: guessers, correctIds };
+    }
     default:
       return {};
   }
@@ -60,6 +68,15 @@ function describeRound(round, players) {
       if (round.votersRevealed) {
         text += ' Who voted for whom: ' + Object.entries(round.answers).map(([v, t]) => `${n(v)}→${n(t)}`).join(', ') + '.';
       }
+      return text;
+    }
+    case 'predict': {
+      const target = n(round.plan.targetId);
+      if (!r.actual) return `${target} didn't answer, so nobody could be right.`;
+      const wrong = r.guesserIds.filter((pid) => !r.correctIds.includes(pid));
+      let text = `${target} chose "${optionText(round, r.actual)}".`;
+      text += r.correctIds.length ? ` Guessed right: ${listNames(r.correctIds.map(n))}.` : ' Nobody guessed it.';
+      if (wrong.length) text += ` Wrong: ${wrong.map((pid) => `${n(pid)} guessed "${optionText(round, round.answers[pid])}"`).join(', ')}.`;
       return text;
     }
     default:

@@ -1,7 +1,7 @@
 // End-of-game stats, computed from what actually happened (no AI involved).
 // The GM only adds titles and flavour on top of these, so the recap works in mock mode
 // and can't invent moments that never happened.
-const { describeRound, nameOf, listNames } = require('./results');
+const { describeRound, nameOf, listNames, optionText } = require('./results');
 
 function computeStats(room) {
   const players = room.players;
@@ -60,6 +60,33 @@ function computeStats(room) {
   const topVotes = Math.max(0, ...Object.values(votesReceived));
   if (topVotes > 0) {
     awards.push({ label: 'Most Voted', playerIds: Object.keys(votesReceived).filter((id) => votesReceived[id] === topVotes), detail: `${topVotes} votes across all "who would..." questions` });
+  }
+
+  // Predictions: who knows the group best, and who nobody can read.
+  const guesses = {};
+  const correct = {};
+  for (const r of played.filter((r) => r.plan.type === 'predict' && r.result.actual)) {
+    const rn = played.indexOf(r);
+    const target = r.plan.targetId;
+    const { guesserIds, correctIds } = r.result;
+    for (const pid of guesserIds) {
+      guesses[pid] = (guesses[pid] || 0) + 1;
+      if (correctIds.includes(pid)) correct[pid] = (correct[pid] || 0) + 1;
+    }
+    if (guesserIds.length > 1 && correctIds.length === 0) {
+      highlight(4, `Nobody predicted that ${n(target)} would choose "${optionText(r, r.result.actual)}". Not one person.`, rn);
+    } else if (guesserIds.length > 1 && correctIds.length === guesserIds.length) {
+      highlight(3, `Everyone knew ${n(target)} would choose "${optionText(r, r.result.actual)}". Total open book.`, rn);
+    } else if (correctIds.length === 1) {
+      highlight(3, `Only ${n(correctIds[0])} knew ${n(target)} would choose "${optionText(r, r.result.actual)}".`, rn);
+    } else {
+      highlight(1, `${listNames(correctIds.map(n))} called it: ${n(target)} chose "${optionText(r, r.result.actual)}".`, rn);
+    }
+  }
+  const topCorrect = Math.max(0, ...Object.values(correct));
+  if (topCorrect > 0) {
+    const ids = Object.keys(correct).filter((id) => correct[id] === topCorrect);
+    awards.push({ label: 'Mind Reader', playerIds: ids, detail: `predicted ${topCorrect} of ${guesses[ids[0]]} right` });
   }
 
   // Best moment from each round first (so memories cover the whole game), then the rest.

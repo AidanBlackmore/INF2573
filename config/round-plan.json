@@ -4,7 +4,7 @@
   "rounds": [
     { "type": "choice" },
     { "type": "vote_player" },
-    { "type": "choice" },
+    { "type": "predict" },
     { "type": "vote_player" }
   ]
 }
