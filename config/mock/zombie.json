@@ -1,0 +1,75 @@
+{
+  "setup": {
+    "intro": "Day 12 of the outbreak. Your group has barricaded itself inside a suburban shopping mall. The food court is running low, and nobody trusts the escalators.",
+    "roles": [
+      { "title": "The Self-Appointed Leader", "blurb": "Wrote a whiteboard of rules on day one. Nobody voted for this." },
+      { "title": "The Medic (Watched Grey's Anatomy Once)", "blurb": "Very confident. Holds the only first-aid kit." },
+      { "title": "The Scavenger", "blurb": "Knows where everything is in the mall and isn't telling." },
+      { "title": "The Morale Officer", "blurb": "Keeps spirits up with snacks and increasingly unhinged pep talks." },
+      { "title": "The Suspiciously Calm One", "blurb": "Hasn't panicked once. That's the problem." },
+      { "title": "The Ex-Influencer", "blurb": "Still filming everything. 'For the archive.'" }
+    ],
+    "relationships": [
+      "{a} saved {b} from a zombie on day 3 and brings it up constantly.",
+      "{a} secretly ate {b}'s last granola bar.",
+      "{a} thinks {b} was bitten and is hiding it.",
+      "{a} and {b} share a night watch shift and have a secret handshake.",
+      "{a} owes {b} a favour, and {b} has not forgotten.",
+      "{a} is convinced {b} would leave the group behind first."
+    ]
+  },
+  "rounds": {
+    "choice": [
+      {
+        "scene": "A voice on the radio promises safety at an army base 40 km away. The catch: you'd have to leave the mall tonight.",
+        "prompt": "What do you do?",
+        "options": ["Pack up and go now", "Stay. The mall has a Cinnabon.", "Send {someone} to check first", "Answer the radio with a fake name"]
+      },
+      {
+        "scene": "A stranger knocks on the barricade holding a full bag of groceries. They say they're 'definitely not bitten.'",
+        "prompt": "What's your move?",
+        "options": ["Let them in", "Take the groceries, not the stranger", "Ask them to prove it (how?)", "Pretend nobody's home"]
+      },
+      {
+        "scene": "The power flickers. Someone has to go down to the basement generator. Alone. In the dark.",
+        "prompt": "How do you handle this?",
+        "options": ["Volunteer {someone}", "Fake a sprained ankle", "Actually go (be brave)", "Give a long speech until someone else volunteers"]
+      }
+    ],
+    "vote_player": [
+      {
+        "scene": "The last can of peaches sits on the food court table. Everyone saw it. Nobody has touched it... yet.",
+        "prompt": "Who would secretly eat the last can of peaches tonight?"
+      },
+      {
+        "scene": "A horde is heading for the mall. The escape van has room for everyone, but somebody is going to slow things down.",
+        "prompt": "Who is most likely to get the group caught because of something ridiculous?"
+      },
+      {
+        "scene": "Rescue finally arrives. The soldier asks who was in charge of your group.",
+        "prompt": "Who would claim to be the leader, whether or not it's true?"
+      }
+    ],
+    "predict": [
+      {
+        "scene": "{target} finds a working shower in the gym. First hot water in 12 days. The horde is 10 minutes away.",
+        "prompt": "What does {target} do?",
+        "options": ["Takes the shower. Worth it.", "Tells everyone and makes a rota", "Keeps it secret forever", "Guards the door with a mop"]
+      },
+      {
+        "scene": "A rival survivor group with much better food offers {target} a spot. Only {target}.",
+        "prompt": "What does {target} say?",
+        "options": ["Joins them immediately", "Negotiates to bring one friend", "Stays loyal (for now)", "Becomes a double agent"]
+      },
+      {
+        "scene": "{target} can take one luxury item on the escape van.",
+        "prompt": "What does {target} bring?",
+        "options": ["Phone charger", "The mall's karaoke machine", "A mannequin they've named", "Snacks. Shared with nobody."]
+      }
+    ]
+  },
+  "recap": {
+    "titles": ["Chief Peach Suspect", "Most Likely to Befriend a Zombie", "The Group's Emotional Support Human", "Suspiciously Well-Fed", "Secret Double Agent", "Would Survive Out of Pure Spite"],
+    "epilogue": "You made it out of the mall. The group chat will never be the same."
+  }
+}

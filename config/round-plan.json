@@ -1,0 +1,9 @@
+{
+  "minPlayers": 3,
+  "maxPlayers": 6,
+  "rounds": [
+    { "type": "choice" },
+    { "type": "choice" },
+    { "type": "choice" }
+  ]
+}

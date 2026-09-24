@@ -1,0 +1,66 @@
+{
+  "setup": {
+    "intro": "Your group has been dropped into a strange new world together. Nobody read the instructions, and something is already going wrong.",
+    "roles": [
+      { "title": "The Unofficial Leader", "blurb": "Nobody picked them. They picked themselves." },
+      { "title": "The Wildcard", "blurb": "Nobody can predict them, including them." },
+      { "title": "The Voice of Reason", "blurb": "Ignored in every crisis so far." },
+      { "title": "The Snack Keeper", "blurb": "Controls the supplies, and therefore the group." },
+      { "title": "The Secret Keeper", "blurb": "Knows something about everyone." },
+      { "title": "The Hype Person", "blurb": "Believes in the group more than the group does." }
+    ],
+    "relationships": [
+      "{a} owes {b} a favour, and {b} brings it up a lot.",
+      "{a} is sure {b} is hiding something.",
+      "{a} and {b} have a running inside joke nobody else understands.",
+      "{a} once blamed {b} for something {a} did.",
+      "{a} would follow {b} anywhere. Reluctantly.",
+      "{a} thinks {b} is the weak link."
+    ]
+  },
+  "rounds": {
+    "choice": [
+      {
+        "scene": "A mysterious door appears. A sign on it says 'ONE PERSON ONLY.'",
+        "prompt": "What do you do?",
+        "options": ["Go through it immediately", "Push {someone} through", "Guard it and charge admission", "Walk away and never speak of it"]
+      },
+      {
+        "scene": "The group's supplies have mysteriously halved overnight.",
+        "prompt": "How do you respond?",
+        "options": ["Start an investigation", "Accuse {someone}", "Quietly hide my share", "Suggest a group hug"]
+      },
+      {
+        "scene": "A stranger offers the group a deal that sounds too good to be true.",
+        "prompt": "What's your call?",
+        "options": ["Take the deal", "Counter-offer", "Let {someone} decide and blame them later", "Run"]
+      }
+    ],
+    "vote_player": [
+      { "scene": "Someone has been keeping a secret diary about the group.", "prompt": "Who is writing the secret diary?" },
+      { "scene": "The group needs a spokesperson to negotiate with the locals.", "prompt": "Who would make the negotiation go spectacularly wrong?" },
+      { "scene": "One person has been awarded a medal for 'services to the group.'", "prompt": "Who would give the longest acceptance speech?" }
+    ],
+    "predict": [
+      {
+        "scene": "{target} finds a bag of gold coins nobody else has seen.",
+        "prompt": "What does {target} do?",
+        "options": ["Shares it equally", "Keeps it secret", "Buys the group a feast", "Invests it in something weird"]
+      },
+      {
+        "scene": "{target} is offered the chance to go home early, alone.",
+        "prompt": "What does {target} say?",
+        "options": ["Leaves immediately", "Refuses loyally", "Asks to bring a friend", "Sells the ticket"]
+      },
+      {
+        "scene": "{target} gets one wish, but everyone will know what it was.",
+        "prompt": "What does {target} wish for?",
+        "options": ["Something noble", "Unlimited snacks", "Revenge (small, petty)", "More wishes"]
+      }
+    ]
+  },
+  "recap": {
+    "titles": ["The Group's Wildcard", "Most Suspicious Behaviour", "Emotional Anchor", "Chief Instigator", "Quietly In Charge", "Would Do It Again"],
+    "epilogue": "The adventure is over. The stories are just getting started."
+  }
+}
