@@ -219,7 +219,7 @@ function nextRound(room, playerId) {
   const number = room.rounds.length + 1;
   return withGM(room, `The Game Master is writing round ${number}…`, async () => {
     const { data, source } = await gm.round(gmContext(room, { plan, roundNumber: number, totalRounds: room.plan.rounds.length }));
-    room.rounds.push({ plan, gm: data, answers: {}, result: null });
+    room.rounds.push({ plan, gm: data, answers: {}, result: null, votersRevealed: false });
     room.gmSource = source;
     room.phase = 'answering';
   });
@@ -243,6 +243,15 @@ function reveal(room) {
   const round = currentRound(room);
   round.result = computeResult(round, room.players);
   room.phase = 'reveal';
+}
+
+// Vote rounds show tallies first; the host decides whether to reveal who voted for whom.
+function revealVoters(room, playerId) {
+  requireHost(room, playerId);
+  requirePhase(room, 'reveal');
+  const round = currentRound(room);
+  if (round.plan.type !== 'vote_player') bad('Not a vote round.');
+  round.votersRevealed = true;
 }
 
 function finish(room) {
@@ -284,6 +293,8 @@ function publicState(room, viewerId) {
   if (room.plan) state.totalRounds = room.plan.rounds.length;
   if (round && ['answering', 'reveal'].includes(room.phase)) {
     const revealed = room.phase === 'reveal';
+    // In vote rounds, individual votes stay secret unless the host reveals them.
+    const showAnswers = revealed && (round.plan.type !== 'vote_player' || round.votersRevealed);
     state.round = {
       number: room.rounds.length,
       type: round.plan.type,
@@ -296,7 +307,8 @@ function publicState(room, viewerId) {
       answeredIds: Object.keys(round.answers),
       yourAnswer: round.answers[viewerId] ?? null,
       // Other players' answers stay hidden until the reveal.
-      answers: revealed ? round.answers : null,
+      answers: showAnswers ? round.answers : null,
+      votersRevealed: round.votersRevealed,
       result: revealed ? round.result : null,
       isLast: room.rounds.length >= room.plan.rounds.length,
     };
@@ -307,5 +319,5 @@ function publicState(room, viewerId) {
 
 module.exports = {
   GameError, createRoom, joinRoom, getRoom, resume, setConnected, publicState, changed,
-  start, voteWorld, lockWorld, nextRound, answer, forceReveal, playAgain,
+  start, voteWorld, lockWorld, nextRound, answer, forceReveal, revealVoters, playAgain,
 };

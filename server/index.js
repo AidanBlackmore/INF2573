@@ -74,6 +74,7 @@ io.on('connection', (socket) => {
   on('next', (_, room, pid) => rooms.nextRound(room, pid));
   on('answer', ({ value }, room, pid) => rooms.answer(room, pid, value));
   on('forceReveal', (_, room, pid) => rooms.forceReveal(room, pid));
+  on('revealVoters', (_, room, pid) => rooms.revealVoters(room, pid));
   on('playAgain', (_, room, pid) => rooms.playAgain(room, pid));
 
   socket.on('disconnect', () => {

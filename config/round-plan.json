@@ -3,7 +3,8 @@
   "maxPlayers": 6,
   "rounds": [
     { "type": "choice" },
+    { "type": "vote_player" },
     { "type": "choice" },
-    { "type": "choice" }
+    { "type": "vote_player" }
   ]
 }

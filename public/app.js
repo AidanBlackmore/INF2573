@@ -162,7 +162,7 @@ function renderAnswering() {
   return `
     ${roundHeader(r)}
     <div class="stack">
-      ${r.options.map((o) => `<button class="${r.yourAnswer === o.id ? 'selected' : ''}" data-action="answer" data-value="${esc(o.id)}">${esc(o.text)}</button>`).join('')}
+      ${r.options.map((o) => `<button class="${r.yourAnswer === o.id ? 'selected' : ''}" data-action="answer" data-value="${esc(o.id)}">${esc(o.text)}${r.type === 'vote_player' && o.id === state.you ? ' <span class="muted">(you)</span>' : ''}</button>`).join('')}
     </div>
     <p class="muted small center">${r.yourAnswer ? 'Locked in. You can still change it until everyone has answered.' : ''}</p>
     <p class="small">${waiting.length ? `Waiting for: ${waiting.map((p) => `<span class="pill">${esc(p.name)}</span>`).join('')}` : ''}</p>
@@ -180,6 +180,19 @@ function renderResult(r) {
         <div class="names">${o.playerIds.length ? esc(namesOf(o.playerIds)) : 'nobody'}</div>
       </div>`).join('');
   }
+  if (r.type === 'vote_player') {
+    const total = Math.max(1, r.result.tally.reduce((sum, t) => sum + t.count, 0));
+    const votersFor = (id) => (r.answers ? Object.keys(r.answers).filter((v) => r.answers[v] === id) : []);
+    return `
+      ${r.result.winners.length ? `<p class="center">The group has spoken:</p><p class="big-code" style="letter-spacing:0;font-size:2rem">${esc(namesOf(r.result.winners))}</p>` : ''}
+      ${r.result.tally.filter((t) => t.count > 0).map((t) => `
+        <div class="card ${r.result.winners.includes(t.playerId) ? 'highlight' : ''}">
+          <strong>${esc(nameOf(t.playerId))}</strong> · ${t.count} vote${t.count === 1 ? '' : 's'}
+          <div class="bar" style="width:${(t.count / total) * 100}%"></div>
+          ${r.answers ? `<div class="names">voted by ${esc(namesOf(votersFor(t.playerId)))}</div>` : ''}
+        </div>`).join('')}
+      ${r.answers ? '' : `<p class="muted small center">Votes are anonymous… unless the host reveals them.</p>`}`;
+  }
   return '';
 }
 
@@ -189,7 +202,8 @@ function renderReveal() {
     <p class="tag">Round ${r.number} of ${state.totalRounds} · Results</p>
     <p class="prompt">${esc(r.prompt)}</p>
     ${renderResult(r)}
-    ${hostBar(`<button class="primary" data-action="next">${r.isLast ? 'See the recap' : 'Next round'}</button>`)}
+    ${hostBar(`${r.type === 'vote_player' && !r.votersRevealed ? '<button data-action="revealVoters">Reveal who voted for whom 👀</button>' : ''}
+      <button class="primary" data-action="next">${r.isLast ? 'See the recap' : 'Next round'}</button>`)}
     ${waitingForHost()}`;
 }
 
@@ -206,6 +220,7 @@ function renderRecap() {
       return `<div class="card ${p.id === state.you ? 'highlight' : ''}">
         <strong>${esc(p.name)}</strong> <span class="muted small">(${esc(state.cast.roles[p.id].title)})</span>
         ${t ? `<h3 style="margin:6px 0 2px">🏆 ${esc(t.title)}</h3>${t.reason ? `<p class="small">${esc(t.reason)}</p>` : ''}` : ''}
+        ${stats.seenAs[p.id].map((v) => `<p class="small">🗳️ ${esc(v.prompt)} <strong>${v.votes}/${v.of}</strong></p>`).join('')}
         ${awards.map((a) => `<p class="small"><span class="pill">${esc(a.label)}</span> ${esc(a.detail)}</p>`).join('')}
       </div>`;
     }).join('')}
@@ -256,6 +271,7 @@ const ACTIONS = {
   next: () => send('next'),
   answer: (v) => send('answer', { value: v }),
   forceReveal: () => send('forceReveal'),
+  revealVoters: () => send('revealVoters'),
   playAgain: () => send('playAgain'),
 };
 
