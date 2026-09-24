@@ -99,7 +99,10 @@ function lanUrls() {
 }
 
 server.listen(PORT, () => {
-  console.log(`\nAlternate Universe running (GM mode: ${gm.mode})`);
+  console.log(`\nAlternate Universe running (GM mode: ${gm.mode}${gm.mode === 'live' ? `, model: ${process.env.GM_MODEL || 'claude-sonnet-5'}` : ''})`);
+  if (gm.mode === 'live' && !process.env.ANTHROPIC_API_KEY) {
+    console.warn('  Warning: GM_MODE=live but ANTHROPIC_API_KEY is not set. Rounds will fall back to mock.');
+  }
   console.log(`  This computer:  http://localhost:${PORT}`);
   for (const url of lanUrls()) console.log(`  Phones on Wi-Fi: ${url}`);
   console.log('');
