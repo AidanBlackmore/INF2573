@@ -1,14 +1,14 @@
 // End-of-game stats, computed from what actually happened (no AI involved).
 // The GM only adds titles and flavour on top of these, so the recap works in mock mode
 // and can't invent moments that never happened.
-const { describeRound, nameOf, listNames, optionText } = require('./results');
+const { describeOutcome, nameOf, listNames, optionText, answerText, reactionSummary, emojiString } = require('./results');
 
 function computeStats(room) {
   const players = room.players;
   const played = room.rounds.filter((r) => r.result);
   const n = (id) => nameOf(players, id);
 
-  const moments = played.map((r, i) => ({ round: i + 1, type: r.plan.type, prompt: r.gm.prompt, outcome: describeRound(r, players) }));
+  const moments = played.map((r, i) => ({ round: i + 1, type: r.plan.type, prompt: r.gm.prompt, outcome: describeOutcome(r, players) }));
   const awards = [];
   // Candidate "memories": weighted so the most inside-joke-worthy moments come first.
   const candidates = [];
@@ -89,11 +89,37 @@ function computeStats(room) {
     awards.push({ label: 'Mind Reader', playerIds: ids, detail: `predicted ${topCorrect} of ${guesses[ids[0]]} right` });
   }
 
+  // Reactions: the answers that got the room going.
+  const received = {};
+  const receivedEmoji = Object.fromEntries(players.map((p) => [p.id, {}]));
+  for (const r of played) {
+    const rn = played.indexOf(r);
+    const summary = reactionSummary(r);
+    for (const x of summary) {
+      received[x.playerId] = (received[x.playerId] || 0) + x.total;
+      for (const [e, c] of Object.entries(x.counts)) receivedEmoji[x.playerId][e] = (receivedEmoji[x.playerId][e] || 0) + c;
+    }
+    const top = summary[0];
+    if (top && top.total >= 2) {
+      highlight(2 + top.total, `On "${r.gm.prompt}", ${n(top.playerId)} ${answerText(r, players, top.playerId)} and got ${emojiString(top.counts)}`, rn);
+    }
+  }
+  const topReceived = Math.max(0, ...Object.values(received));
+  if (topReceived > 0) {
+    awards.push({ label: 'Crowd Favourite', playerIds: Object.keys(received).filter((id) => received[id] === topReceived), detail: `${topReceived} reactions from the group` });
+  }
+  // Each player's signature emoji: the one the group sent them most.
+  const signature = {};
+  for (const [pid, counts] of Object.entries(receivedEmoji)) {
+    const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    if (best) signature[pid] = { emoji: best[0], count: best[1] };
+  }
+
   // Best moment from each round first (so memories cover the whole game), then the rest.
   candidates.sort((a, b) => b.weight - a.weight);
   const firsts = candidates.filter((c, i) => candidates.findIndex((d) => d.round === c.round) === i);
   const highlights = [...firsts, ...candidates.filter((c) => !firsts.includes(c))].map((c) => c.text);
-  return { moments, awards, highlights, seenAs };
+  return { moments, awards, highlights, seenAs, signature };
 }
 
 module.exports = { computeStats };

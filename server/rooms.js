@@ -220,7 +220,7 @@ function nextRound(room, playerId) {
   const number = room.rounds.length + 1;
   return withGM(room, `The Game Master is writing round ${number}…`, async () => {
     const { data, source } = await gm.round(gmContext(room, { plan, roundNumber: number, totalRounds: room.plan.rounds.length }));
-    room.rounds.push({ plan, gm: data, answers: {}, result: null, votersRevealed: false });
+    room.rounds.push({ plan, gm: data, answers: {}, result: null, votersRevealed: false, reactions: {} });
     room.gmSource = source;
     room.phase = 'answering';
   });
@@ -253,6 +253,19 @@ function revealVoters(room, playerId) {
   const round = currentRound(room);
   if (round.plan.type !== 'vote_player') bad('Not a vote round.');
   round.votersRevealed = true;
+}
+
+// Emoji reaction to another player's answer. Tap the same emoji again to take it back.
+function react(room, playerId, targetId, emoji) {
+  requirePhase(room, 'reveal');
+  const round = currentRound(room);
+  if (!room.plan.reactions.includes(emoji)) bad('Unknown reaction.');
+  if (targetId === playerId) bad("You can't react to yourself.");
+  if (!(targetId in round.answers)) bad('Nothing to react to.');
+  if (round.plan.type === 'vote_player' && !round.votersRevealed) bad('Votes are still secret.');
+  const mine = (round.reactions[targetId] ||= {});
+  if (mine[playerId] === emoji) delete mine[playerId];
+  else mine[playerId] = emoji;
 }
 
 function finish(room) {
@@ -310,6 +323,8 @@ function publicState(room, viewerId) {
       // Other players' answers stay hidden until the reveal.
       answers: showAnswers ? round.answers : null,
       votersRevealed: round.votersRevealed,
+      reactions: revealed ? round.reactions : null,
+      reactionEmojis: room.plan.reactions,
       result: revealed ? round.result : null,
       isLast: room.rounds.length >= room.plan.rounds.length,
     };
@@ -320,5 +335,5 @@ function publicState(room, viewerId) {
 
 module.exports = {
   GameError, createRoom, joinRoom, getRoom, resume, setConnected, publicState, changed,
-  start, voteWorld, lockWorld, nextRound, answer, forceReveal, revealVoters, playAgain,
+  start, voteWorld, lockWorld, nextRound, answer, forceReveal, revealVoters, react, playAgain,
 };

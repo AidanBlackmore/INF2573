@@ -50,8 +50,42 @@ function computeResult(round, players) {
   }
 }
 
+// What one player's answer means in words, e.g. for reaction cards and the recap.
+function answerText(round, players, playerId) {
+  const value = round.answers[playerId];
+  if (value === undefined) return '';
+  switch (round.plan.type) {
+    case 'vote_player': return value === playerId ? 'voted for themselves' : `voted for ${nameOf(players, value)}`;
+    case 'predict': return playerId === round.plan.targetId ? `chose "${optionText(round, value)}"` : `guessed "${optionText(round, value)}"`;
+    default: return `chose "${optionText(round, value)}"`;
+  }
+}
+
+// Reaction totals per answer, most reacted first: [{ playerId, total, counts: {emoji: n} }]
+function reactionSummary(round) {
+  return Object.entries(round.reactions || {})
+    .map(([playerId, byReactor]) => {
+      const counts = {};
+      for (const e of Object.values(byReactor)) counts[e] = (counts[e] || 0) + 1;
+      return { playerId, total: Object.values(byReactor).length, counts };
+    })
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.total - a.total);
+}
+
+function emojiString(counts) {
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([e, c]) => e.repeat(c)).join('');
+}
+
 // Short factual summary of what happened, e.g. for the GM's history and the recap.
 function describeRound(round, players) {
+  const reactions = reactionSummary(round).slice(0, 2)
+    .map((x) => `${nameOf(players, x.playerId)} (${answerText(round, players, x.playerId)}) got ${emojiString(x.counts)}`);
+  const base = describeOutcome(round, players);
+  return reactions.length ? `${base} Reactions: ${reactions.join('; ')}.` : base;
+}
+
+function describeOutcome(round, players) {
   const r = round.result || {};
   const n = (id) => nameOf(players, id);
   switch (round.plan.type) {
@@ -84,4 +118,4 @@ function describeRound(round, players) {
   }
 }
 
-module.exports = { computeResult, describeRound, nameOf, optionText, listNames };
+module.exports = { computeResult, describeRound, describeOutcome, nameOf, optionText, listNames, answerText, reactionSummary, emojiString };

@@ -2,9 +2,25 @@
   "minPlayers": 3,
   "maxPlayers": 6,
   "rounds": [
-    { "type": "choice" },
-    { "type": "vote_player" },
-    { "type": "predict" },
-    { "type": "vote_player" }
+    {
+      "type": "choice"
+    },
+    {
+      "type": "vote_player"
+    },
+    {
+      "type": "predict"
+    },
+    {
+      "type": "vote_player"
+    }
+  ],
+  "reactions": [
+    "😂",
+    "😱",
+    "🐍",
+    "❤️",
+    "🙄",
+    "💀"
   ]
 }

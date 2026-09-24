@@ -225,12 +225,47 @@ function renderResult(r) {
   return '';
 }
 
+function answerLabel(r, pid) {
+  const v = r.answers[pid];
+  const opt = (id) => (r.options.find((o) => o.id === id) || { text: '?' }).text;
+  if (r.type === 'vote_player') return v === pid ? 'voted for themselves 👀' : `voted for ${nameOf(v)}`;
+  if (r.type === 'predict') return pid === r.targetId ? `chose "${opt(v)}"` : `guessed "${opt(v)}"`;
+  return `chose "${opt(v)}"`;
+}
+
+// One card per answer. Tap an emoji to react to someone (tap again to undo).
+function renderReactions(r) {
+  if (!r.answers) return '';
+  const ids = Object.keys(r.answers);
+  if (!ids.length) return '';
+  // Your own card last, so the others are what you see first.
+  ids.sort((a, b) => (a === state.you) - (b === state.you));
+  return `
+    <h2>React</h2>
+    ${ids.map((pid) => {
+      const byReactor = (r.reactions && r.reactions[pid]) || {};
+      const count = (e) => Object.values(byReactor).filter((x) => x === e).length;
+      const yours = byReactor[state.you];
+      const own = pid === state.you;
+      const buttons = r.reactionEmojis.map((e) => {
+        const c = count(e);
+        if (own) return c ? `<span class="pill">${e} ${c}</span>` : '';
+        return `<button class="emoji ${yours === e ? 'selected' : ''}" data-action="react" data-target="${esc(pid)}" data-value="${e}">${e}${c ? `<small>${c}</small>` : ''}</button>`;
+      }).join('');
+      return `<div class="card">
+        <strong>${own ? 'You' : esc(nameOf(pid))}</strong> <span class="names">${esc(answerLabel(r, pid))}</span>
+        <div class="emoji-row">${buttons || (own ? '<span class="muted small">No reactions yet</span>' : '')}</div>
+      </div>`;
+    }).join('')}`;
+}
+
 function renderReveal() {
   const r = state.round;
   return `
     <p class="tag">Round ${r.number} of ${state.totalRounds} · Results</p>
     <p class="prompt">${esc(r.prompt)}</p>
     ${renderResult(r)}
+    ${renderReactions(r)}
     ${hostBar(`${r.type === 'vote_player' && !r.votersRevealed ? '<button data-action="revealVoters">Reveal who voted for whom 👀</button>' : ''}
       <button class="primary" data-action="next">${r.isLast ? 'See the recap' : 'Next round'}</button>`)}
     ${waitingForHost()}`;
@@ -248,6 +283,7 @@ function renderRecap() {
       const awards = stats.awards.filter((a) => a.playerIds.includes(p.id));
       return `<div class="card ${p.id === state.you ? 'highlight' : ''}">
         <strong>${esc(p.name)}</strong> <span class="muted small">(${esc(state.cast.roles[p.id].title)})</span>
+        ${stats.signature[p.id] ? `<span style="float:right" title="Most-received reaction">${stats.signature[p.id].emoji}×${stats.signature[p.id].count}</span>` : ''}
         ${t ? `<h3 style="margin:6px 0 2px">🏆 ${esc(t.title)}</h3>${t.reason ? `<p class="small">${esc(t.reason)}</p>` : ''}` : ''}
         ${stats.seenAs[p.id].map((v) => `<p class="small">🗳️ ${esc(v.prompt)} <strong>${v.votes}/${v.of}</strong></p>`).join('')}
         ${awards.map((a) => `<p class="small"><span class="pill">${esc(a.label)}</span> ${esc(a.detail)}</p>`).join('')}
@@ -299,6 +335,7 @@ const ACTIONS = {
   lockWorld: () => send('lockWorld'),
   next: () => send('next'),
   answer: (v) => send('answer', { value: v }),
+  react: (v, btn) => send('react', { targetId: btn.dataset.target, emoji: v }),
   forceReveal: () => send('forceReveal'),
   revealVoters: () => send('revealVoters'),
   playAgain: () => send('playAgain'),
@@ -308,5 +345,5 @@ document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action]');
   if (!btn || btn.disabled) return;
   const fn = ACTIONS[btn.dataset.action];
-  if (fn) fn(btn.dataset.value);
+  if (fn) fn(btn.dataset.value, btn);
 });
