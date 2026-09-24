@@ -8,28 +8,35 @@ let lanUrl = null;
 
 // ---------- session (so a phone that sleeps can rejoin) ----------
 
+// Per-tab session (sessionStorage) auto-resumes after a reload or dropped connection.
+// localStorage remembers the last game on this device, offered as a "Rejoin" button
+// (never automatic, so several tabs in one browser can be different players).
 const SESSION_KEY = 'au-session';
-function loadSession() {
-  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+function readStore(store) {
+  try { return JSON.parse(store.getItem(SESSION_KEY)); } catch { return null; }
 }
 function saveSession(s) {
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch { /* private mode */ }
+  for (const store of [sessionStorage, localStorage]) {
+    try { store.setItem(SESSION_KEY, JSON.stringify(s)); } catch { /* private mode */ }
+  }
 }
 function clearSession() {
-  try { localStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+  for (const store of [sessionStorage, localStorage]) {
+    try { store.removeItem(SESSION_KEY); } catch { /* ignore */ }
+  }
+}
+function resume(s) {
+  socket.emit('resume', s, (res) => {
+    if (!res.ok) { clearSession(); state = null; render(); toast('That game has ended.'); }
+  });
 }
 
 socket.on('connect', () => {
-  const s = loadSession();
-  if (s) {
-    socket.emit('resume', s, (res) => {
-      if (!res.ok) { clearSession(); state = null; render(); }
-    });
-  } else if (!state) {
-    render();
-  }
+  const s = readStore(sessionStorage);
+  if (s) resume(s);
+  else if (!state) render();
 });
-socket.on('joined', ({ code, token }) => saveSession({ code, token }));
+socket.on('joined', ({ code, token, name }) => saveSession({ code, token, name }));
 socket.on('state', (s) => { state = s; render(); });
 
 fetch('/info').then((r) => r.json()).then((info) => { lanUrl = info.urls[0] || null; if (state) render(); }).catch(() => {});
@@ -72,7 +79,9 @@ const ROUND_LABELS = {
 
 function renderHome() {
   const code = new URLSearchParams(location.search).get('code') || '';
+  const last = readStore(localStorage);
   return `
+    ${last ? `<div class="card highlight stack"><p>Were you in room <strong>${esc(last.code)}</strong>${last.name ? ` as <strong>${esc(last.name)}</strong>` : ''}?</p><button class="primary" data-action="rejoin">Rejoin that game</button></div>` : ''}
     <h1>Alternate Universe</h1>
     <p class="muted">A party game for friends. An AI Game Master drops your group into another world, then asks what you really think of each other.</p>
     <div class="card stack">
@@ -325,9 +334,12 @@ const ACTIONS = {
   join() {
     send('join', { name: document.getElementById('name').value, code: document.getElementById('code').value });
   },
+  rejoin() {
+    resume(readStore(localStorage));
+  },
   leave() {
-    if (!confirm('Leave this game? You can rejoin only while the room is in the lobby.')) return;
-    clearSession();
+    if (!confirm('Leave this game? You can rejoin it from the home screen on this device.')) return;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
     location.href = '/';
   },
   start: () => send('start'),

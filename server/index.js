@@ -34,7 +34,7 @@ function attach(socket, room, player) {
   sockets.set(key, socket);
   socket.data = { code: room.code, playerId: player.id };
   room.listeners.add(broadcast);
-  socket.emit('joined', { code: room.code, token: player.token, playerId: player.id });
+  socket.emit('joined', { code: room.code, token: player.token, playerId: player.id, name: player.name });
   rooms.setConnected(room, player.id, true);
   broadcast(room);
 }
